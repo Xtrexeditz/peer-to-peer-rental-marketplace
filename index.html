@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentEasy - Peer-to-Peer Rental</title>
+    <!-- Google Font for a clean, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="logo">
+            <h1>RentEasy</h1>
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#items">Items</a></li>
+                <li><a href="#list-item">List Item</a></li>
+                <li><a href="login.html" id="authLink">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <h2>Rent Anything, Anytime</h2>
+        <p>A simple peer-to-peer rental system for sharing student resources on campus.</p>
+        <a href="#items" class="cta-btn">Browse Items</a>
+    </section>
+
+    <!-- Items Section -->
+    <section id="items" class="items-section">
+        <h2 class="section-title">Available Items</h2>
+
+        <!-- Category Filter Buttons -->
+        <div class="filter-container">
+            <button class="filter-btn active" onclick="filterCategory('All', this)">All</button>
+            <button class="filter-btn" onclick="filterCategory('Electronics', this)">Electronics</button>
+            <button class="filter-btn" onclick="filterCategory('Tools', this)">Tools</button>
+            <button class="filter-btn" onclick="filterCategory('Vehicles', this)">Vehicles</button>
+        </div>
+
+        <div class="items-grid">
+
+            <div class="item-card" data-category="Electronics">
+                <img src="./images/laptop.png" alt="Laptop">
+                <div class="item-details">
+                    <h3>High-Performance Laptop</h3>
+                    <p class="price">$25/day</p>
+                    <button class="rent-btn" onclick="selectItem('High-Performance Laptop')">Rent Now</button>
+                </div>
+            </div>
+
+            <div class="item-card" data-category="Electronics">
+                <img src="./images/camera.png" alt="Camera">
+                <div class="item-details">
+                    <h3>DSLR Canon Camera</h3>
+                    <p class="price">$18/day</p>
+                    <button class="rent-btn" onclick="selectItem('DSLR Canon Camera')">Rent Now</button>
+                </div>
+            </div>
+
+            <div class="item-card" data-category="Tools">
+                <img src="./images/drill.png" alt="Drill">
+                <div class="item-details">
+                    <h3>Power Drill Machine</h3>
+                    <p class="price">$8/day</p>
+                    <button class="rent-btn" onclick="selectItem('Power Drill Machine')">Rent Now</button>
+                </div>
+            </div>
+
+            <div class="item-card" data-category="Vehicles">
+                <img src="./images/bicycle.png" alt="Bicycle">
+                <div class="item-details">
+                    <h3>Mountain Bicycle</h3>
+                    <p class="price">$5/day</p>
+                    <button class="rent-btn" onclick="selectItem('Mountain Bicycle')">Rent Now</button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- List Your Item Section (for Owners) -->
+    <section id="list-item" class="list-section">
+        <h2 class="section-title">List Your Item</h2>
+        <div class="form-container">
+            <form id="addItemForm">
+                <div class="form-group">
+                    <label for="newItemName">Item Name</label>
+                    <input type="text" id="newItemName" placeholder="e.g. Projector" required>
+                </div>
+                <div class="form-group">
+                    <label for="newItemPrice">Price/Day ($)</label>
+                    <input type="number" id="newItemPrice" min="1" placeholder="e.g. 10" required>
+                </div>
+                <div class="form-group">
+                    <label for="newItemCategory">Category</label>
+                    <select id="newItemCategory" required>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Tools">Tools</option>
+                        <option value="Vehicles">Vehicles</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn" style="background:#3b82f6;">List Item</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Booking Form Section -->
+    <section id="booking" class="booking-section">
+        <h2 class="section-title">Book an Item</h2>
+        <div class="form-container">
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="userName">Full Name</label>
+                    <input type="text" id="userName" placeholder="Enter name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="userAddress">Address</label>
+                    <input type="text" id="userAddress" placeholder="Hostel/Room No." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemName">Item</label>
+                    <select id="itemName" required>
+                        <option value="" disabled selected>Select an item</option>
+                        <option value="High-Performance Laptop">High-Performance Laptop</option>
+                        <option value="DSLR Canon Camera">DSLR Canon Camera</option>
+                        <option value="Power Drill Machine">Power Drill Machine</option>
+                        <option value="Mountain Bicycle">Mountain Bicycle</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rentalDays">Duration (Days)</label>
+                    <input type="number" id="rentalDays" min="1" max="30" placeholder="e.g. 3" required>
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Booking</button>
+            </form>
+        </div>
+
+        <!-- Rental Receipt Container (Hidden by default) -->
+        <div id="receipt" class="receipt-paper" style="display: none;">
+            <h3>Rental Receipt</h3>
+            <hr style="margin: 10px 0; border: 1px dashed #cbd5e0;">
+            <p style="text-align: left;"><strong>Renter Name:</strong> <span id="recName"></span></p>
+            <p style="text-align: left;"><strong>Address:</strong> <span id="recAddress"></span></p>
+            <p style="text-align: left;"><strong>Item Name:</strong> <span id="recItem"></span></p>
+            <p style="text-align: left;"><strong>Rental Period:</strong> <span id="recDays"></span> day(s)</p>
+            <p style="text-align: left;"><strong>Total Cost:</strong> $<span id="recTotal"></span></p>
+            <button class="submit-btn" style="margin-top: 15px; background: #2b6cb0;" onclick="window.print()">Print Receipt</button>
+            <button class="submit-btn" style="margin-top: 10px; background: #718096;" onclick="document.getElementById('receipt').style.display='none'">Close</button>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <h2 class="section-title">Contact</h2>
+        <p>Email: rammandloi9343@gmail.com | Phone: 7894195751</p>
+        <p>Location: Block-C, Room 102</p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 RentEasy reserved</p>
+    </footer>
+
+    <!-- Main Logic Script -->
+    <script src="script.js"></script>
+</body>
+
+</html>
