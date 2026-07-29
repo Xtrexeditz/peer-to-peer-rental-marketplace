@@ -4,42 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentEasy - Authenticate</title>
-    <!-- Google Font for a clean, modern look -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-body">
-
-    <!-- Unified Auth Box Card -->
     <div class="login-container">
         <h2 id="authTitle">Login</h2>
         <p class="login-subtitle" id="authSubtitle">Sign in to rent campus items</p>
         
         <form id="authForm">
-            <!-- Full Name (Only visible for Signup) -->
             <div class="form-group" id="nameGroup" style="display:none;">
                 <label for="fullName">Full Name</label>
                 <input type="text" id="fullName" placeholder="Enter your full name">
             </div>
-
-            <!-- Address (Only visible for Signup) -->
             <div class="form-group" id="addressGroup" style="display:none;">
                 <label for="address">Campus Address / Hostel Room</label>
                 <input type="text" id="address" placeholder="e.g. Hostel 4, Room 102">
             </div>
-
-            <!-- Email (Common) -->
             <div class="form-group">
                 <label for="email">College Email ID</label>
                 <input type="email" id="email" placeholder="student@college.edu" required>
             </div>
-
-            <!-- Password (Common) -->
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" placeholder="Enter password" required>
             </div>
-
             <button type="submit" class="submit-btn" id="authSubmitBtn">Sign In</button>
         </form>
         
@@ -48,8 +37,6 @@
             <a href="index.html">← Back to Home</a>
         </div>
     </div>
-
-    <!-- Script file containing auth & toggle logic -->
     <script src="script.js"></script>
 </body>
 </html>

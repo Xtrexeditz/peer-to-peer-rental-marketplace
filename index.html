@@ -1,53 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentEasy - Peer-to-Peer Rental</title>
-    <!-- Google Font for a clean, modern look -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-    <!-- Header Navigation -->
     <header class="navbar">
-        <div class="logo">
-            <h1>RentEasy</h1>
-        </div>
+        <div class="logo"><h1>RentEasy</h1></div>
         <nav>
             <ul class="nav-links">
-                <li><a href="#home">Home</a></li>
+                <li class="active"><a href="#home">Home</a></li>
                 <li><a href="#items">Items</a></li>
-                <li><a href="#list-item" id="listItemLink">List Item</a></li>
-                <li><a href="login.html" id="authLink">Login</a></li>
+                <li><a href="list-item.html" id="listItemLink">List Item</a></li>
+                <li><a href="login.html" id="authLink">Login / Signup</a></li>
             </ul>
         </nav>
     </header>
 
-    <!-- Hero Section -->
     <section id="home" class="hero">
         <h2>Rent Anything, Anytime</h2>
-        <p>A simple peer-to-peer rental system for sharing student resources on campus.</p>
+        <p>A simple peer-to-peer rental system for sharing student resources</p>
         <a href="#items" class="cta-btn">Browse Items</a>
     </section>
 
-    <!-- Items Section -->
     <section id="items" class="items-section">
         <h2 class="section-title">Available Items</h2>
-
-        <!-- Category Filter Buttons -->
         <div class="filter-container">
             <button class="filter-btn active" onclick="filterCategory('All', this)">All</button>
             <button class="filter-btn" onclick="filterCategory('Electronics', this)">Electronics</button>
             <button class="filter-btn" onclick="filterCategory('Tools', this)">Tools</button>
             <button class="filter-btn" onclick="filterCategory('Vehicles', this)">Vehicles</button>
+            <button class="filter-btn" onclick="filterCategory('Other', this)">Other</button>
         </div>
-
         <div class="items-grid">
-
             <div class="item-card" data-category="Electronics">
                 <img src="./images/laptop.png" alt="Laptop">
                 <div class="item-details">
@@ -56,7 +44,6 @@
                     <button class="rent-btn" onclick="selectItem('High-Performance Laptop')">Rent Now</button>
                 </div>
             </div>
-
             <div class="item-card" data-category="Electronics">
                 <img src="./images/camera.png" alt="Camera">
                 <div class="item-details">
@@ -65,7 +52,6 @@
                     <button class="rent-btn" onclick="selectItem('DSLR Canon Camera')">Rent Now</button>
                 </div>
             </div>
-
             <div class="item-card" data-category="Tools">
                 <img src="./images/drill.png" alt="Drill">
                 <div class="item-details">
@@ -74,7 +60,6 @@
                     <button class="rent-btn" onclick="selectItem('Power Drill Machine')">Rent Now</button>
                 </div>
             </div>
-
             <div class="item-card" data-category="Vehicles">
                 <img src="./images/bicycle.png" alt="Bicycle">
                 <div class="item-details">
@@ -83,104 +68,50 @@
                     <button class="rent-btn" onclick="selectItem('Mountain Bicycle')">Rent Now</button>
                 </div>
             </div>
-
         </div>
     </section>
+    <!-- Item Details Modal -->
+    <div id="detailsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeDetailsModal()">&times;</button>
+            <div class="modal-body">
+                <div class="modal-img-container">
+                    <img id="modalItemImage" src="" alt="Item Image">
+                </div>
+                <div class="modal-info-container">
+                    <span id="modalItemStatus" class="status-badge">Available</span>
+                    <h2 id="modalItemName" class="modal-title">Item Name</h2>
+                    <p class="modal-price">$<span id="modalItemPrice">0</span>/day</p>
+                    
+                    <div class="modal-specs">
+                        <p><strong>Category:</strong> <span id="modalItemCategory">Electronics</span></p>
+                        <p><strong>Listed By:</strong> <span id="modalItemOwner">Campus Renter</span></p>
+                        <p><strong>Location:</strong> <span id="modalItemLocation">Campus</span></p>
+                        <p><strong>Mobile No:</strong> <span id="modalItemPhone">N/A</span></p>
+                        <p><strong>Listed On:</strong> <span id="modalItemDate">July 29, 2026</span></p>
+                    </div>
 
-    <!-- List Your Item Section (for Owners) -->
-    <section id="list-item" class="list-section">
-        <h2 class="section-title">List Your Item</h2>
-        <div class="form-container">
-            <form id="addItemForm">
-                <div class="form-group">
-                    <label for="newItemName">Item Name</label>
-                    <input type="text" id="newItemName" placeholder="e.g. Projector" required>
+                    <div class="modal-description-box">
+                        <h3>Description</h3>
+                        <p id="modalItemDescription">No description available.</p>
+                    </div>
+
+                    <button id="modalRentBtn" class="rent-btn" style="width: 100%; margin-top: 15px;">Rent Now</button>
                 </div>
-                <div class="form-group">
-                    <label for="newItemPrice">Price/Day ($)</label>
-                    <input type="number" id="newItemPrice" min="1" placeholder="e.g. 10" required>
-                </div>
-                <div class="form-group">
-                    <label for="newItemCategory">Category</label>
-                    <select id="newItemCategory" required>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Tools">Tools</option>
-                        <option value="Vehicles">Vehicles</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="newItemImage">Item Photo URL</label>
-                    <input type="text" id="newItemImage" placeholder="e.g. ./images/camera.png or web URL">
-                </div>
-                <button type="submit" class="submit-btn" style="background:#3b82f6;">List Item</button>
-            </form>
+            </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Booking Form Section -->
-    <section id="booking" class="booking-section">
-        <h2 class="section-title">Book an Item</h2>
-        <div class="form-container">
-            <form id="bookingForm">
-                <div class="form-group">
-                    <label for="userName">Full Name</label>
-                    <input type="text" id="userName" placeholder="Enter name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="userAddress">Address</label>
-                    <input type="text" id="userAddress" placeholder="Hostel/Room No." required>
-                </div>
-
-                <div class="form-group">
-                    <label for="itemName">Item</label>
-                    <select id="itemName" required>
-                        <option value="" disabled selected>Select an item</option>
-                        <option value="High-Performance Laptop">High-Performance Laptop</option>
-                        <option value="DSLR Canon Camera">DSLR Canon Camera</option>
-                        <option value="Power Drill Machine">Power Drill Machine</option>
-                        <option value="Mountain Bicycle">Mountain Bicycle</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="rentalDays">Duration (Days)</label>
-                    <input type="number" id="rentalDays" min="1" max="30" placeholder="e.g. 3" required>
-                </div>
-
-                <button type="submit" class="submit-btn">Submit Booking</button>
-            </form>
-        </div>
-
-        <!-- Rental Receipt Container (Hidden by default) -->
-        <div id="receipt" class="receipt-paper" style="display: none;">
-            <h3>Rental Receipt</h3>
-            <hr style="margin: 10px 0; border: 1px dashed #cbd5e0;">
-            <p style="text-align: left;"><strong>Renter Name:</strong> <span id="recName"></span></p>
-            <p style="text-align: left;"><strong>Address:</strong> <span id="recAddress"></span></p>
-            <p style="text-align: left;"><strong>Item Name:</strong> <span id="recItem"></span></p>
-            <p style="text-align: left;"><strong>Rental Period:</strong> <span id="recDays"></span> day(s)</p>
-            <p style="text-align: left;"><strong>Total Cost:</strong> $<span id="recTotal"></span></p>
-            <button class="submit-btn" style="margin-top: 15px; background: #2b6cb0;" onclick="window.print()">Print Receipt</button>
-            <button class="submit-btn" style="margin-top: 10px; background: #718096;" onclick="document.getElementById('receipt').style.display='none'">Close</button>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
     <section id="contact" class="contact-section">
         <h2 class="section-title">Contact</h2>
         <p>Email: rammandloi9343@gmail.com | Phone: 7894195751</p>
         <p>Location: Block-C, Room 102</p>
     </section>
 
-    <!-- Footer -->
     <footer>
         <p>&copy; 2026 RentEasy reserved</p>
     </footer>
 
-    <!-- Main Logic Script -->
     <script src="script.js"></script>
 </body>
-
 </html>

@@ -11,6 +11,11 @@ const bookingSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  userPhone: {
+    type: String,
+    required: true,
+    trim: true
+  },
   itemName: {
     type: String,
     required: true,

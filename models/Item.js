@@ -21,9 +21,21 @@ const itemSchema = new mongoose.Schema({
     type: String,
     default: "./images/laptop.png"
   },
+  description: {
+    type: String,
+    default: "No description provided."
+  },
+  location: {
+    type: String,
+    default: "Campus"
+  },
+  phone: {
+    type: String,
+    default: "N/A"
+  },
   owner: {
     type: String,
-    default: "Campus Renter"
+    default: "Ram Mandloi"
   },
   available: {
     type: Boolean,

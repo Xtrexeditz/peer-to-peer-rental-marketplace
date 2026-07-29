@@ -1,377 +1,228 @@
-// RentEasy - JavaScript Logic for Campus Portal (MongoDB Backend Integration)
+const currentUser = localStorage.getItem("currentUser");
+const currentAddress = localStorage.getItem("currentAddress");
 
-const API_BASE = "http://localhost:5000/api";
-
-// Check login status from localStorage
-let currentUser = localStorage.getItem("currentUser");
-let currentAddress = localStorage.getItem("currentAddress");
-
-// Navbar Auth Display
-let authLink = document.getElementById("authLink");
+// Common Navbar Setup
+const authLink = document.getElementById("authLink");
 if (authLink) {
+    authLink.textContent = currentUser ? `Logout (${currentUser})` : "Login / Signup";
+    authLink.href = currentUser ? "#" : "login.html";
     if (currentUser) {
-        authLink.textContent = "Logout (" + currentUser + ")";
-        authLink.href = "#";
-        authLink.onclick = function() {
-            localStorage.clear();
-            alert("Logged out successfully!");
-            location.reload();
-        };
-    } else {
-        authLink.textContent = "Login / Signup";
-        authLink.href = "login.html";
+        authLink.onclick = () => { localStorage.clear(); location.reload(); };
     }
 }
 
-// Show and scroll to List Item section
-let listItemLink = document.getElementById("listItemLink");
-if (listItemLink) {
-    listItemLink.onclick = function(event) {
-        event.preventDefault();
-        let listSection = document.getElementById("list-item");
-        if (listSection) {
-            listSection.style.display = "block";
-            listSection.scrollIntoView({ behavior: "smooth" });
-        }
-    };
-}
-
-// Fetch items from MongoDB API and render
-async function fetchItemsFromAPI() {
-    try {
-        const res = await fetch(`${API_BASE}/items`);
-        if (res.ok) {
-            const items = await res.json();
-            renderItemsGrid(items);
-        }
-    } catch (err) {
-        console.warn("MongoDB API offline. Showing static items from HTML.", err);
-    }
-}
-
-function renderItemsGrid(items) {
-    const grid = document.querySelector(".items-grid");
-    const itemSelect = document.getElementById("itemName");
-
-    if (grid && items && items.length > 0) {
-        grid.innerHTML = "";
-        if (itemSelect) {
-            itemSelect.innerHTML = `<option value="" disabled selected>Select an item</option>`;
-        }
-
-        items.forEach(item => {
-            const card = document.createElement("div");
-            card.className = "item-card";
-            card.setAttribute("data-category", item.category);
-            card.innerHTML = `
-                <img src="${item.image || './images/laptop.png'}" alt="${item.name}">
+// 1. GALLERY & DETAILS MODAL (index.html)
+let allItemsList = [];
+const grid = document.querySelector(".items-grid");
+if (grid) {
+    (async () => {
+        const res = await fetch("/api/items");
+        allItemsList = res.ok ? await res.json() : [];
+        grid.innerHTML = allItemsList.map(item => {
+            const img = item.image || (item.category === "Tools" ? "./images/drill.png" : item.category === "Vehicles" ? "./images/bicycle.png" : item.category === "Electronics" ? "./images/camera.png" : "./images/laptop.png");
+            return `
+            <div class="item-card" data-category="${item.category}">
+                <img src="${img}" alt="${item.name}">
                 <div class="item-details">
                     <h3>${item.name}</h3>
                     <p class="price">$${item.price}/day</p>
-                    <button class="rent-btn" onclick="selectItem('${item.name.replace(/'/g, "\\'")}')">Rent Now</button>
+                    <div class="item-actions-group">
+                        <button class="details-btn" onclick="openDetailsModal('${item._id}')">Details</button>
+                        <button class="rent-btn" onclick="selectItem('${item.name.replace(/'/g, "\\'")}')">Rent Now</button>
+                    </div>
                 </div>
-            `;
-            grid.appendChild(card);
-
-            if (itemSelect) {
-                const opt = document.createElement("option");
-                opt.value = item.name;
-                opt.textContent = item.name;
-                itemSelect.appendChild(opt);
-            }
-        });
-    }
+            </div>`;
+        }).join("") || `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No items available.</p>`;
+    })();
 }
 
-// Call on page load
-document.addEventListener("DOMContentLoaded", () => {
-    fetchItemsFromAPI();
-});
+window.selectItem = (name) => {
+    window.location.href = `book.html?item=${encodeURIComponent(name)}`;
+};
 
-// Category filter
-function filterCategory(cat, btn) {
-    let buttons = document.getElementsByClassName("filter-btn");
-    for (let i = 0; i < buttons.length; i++) {
-        buttons[i].classList.remove("active");
-    }
-    if (btn) btn.classList.add("active");
+window.filterCategory = (cat, btn) => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn?.classList.add("active");
+    document.querySelectorAll(".item-card").forEach(card => {
+        card.style.display = (cat === "All" || card.dataset.category === cat) ? "flex" : "none";
+    });
+};
 
-    let cards = document.getElementsByClassName("item-card");
-    for (let i = 0; i < cards.length; i++) {
-        let category = cards[i].getAttribute("data-category");
-        if (cat === "All" || category === cat) {
-            cards[i].style.display = "flex";
-        } else {
-            cards[i].style.display = "none";
-        }
-    }
-}
-
-// Select item to book
-function selectItem(name) {
-    let bookingSection = document.getElementById("booking");
-    if (!bookingSection) return;
-
-    bookingSection.style.display = "block";
-    let bookingParent = document.getElementById("bookingForm")?.parentElement;
-    if (bookingParent) bookingParent.style.display = "block";
+window.openDetailsModal = (id) => {
+    const item = allItemsList.find(i => i._id === id);
+    if (!item) return;
     
-    let receipt = document.getElementById("receipt");
-    if (receipt) receipt.style.display = "none";
-
-    let itemSelect = document.getElementById("itemName");
-    if (itemSelect) itemSelect.value = name;
+    document.getElementById("modalItemImage").src = item.image || (item.category === "Tools" ? "./images/drill.png" : item.category === "Vehicles" ? "./images/bicycle.png" : item.category === "Electronics" ? "./images/camera.png" : "./images/laptop.png");
+    document.getElementById("modalItemName").textContent = item.name;
+    document.getElementById("modalItemPrice").textContent = item.price;
+    document.getElementById("modalItemCategory").textContent = item.category;
+    document.getElementById("modalItemOwner").textContent = item.owner || "Campus Lender";
+    document.getElementById("modalItemLocation").textContent = item.location || "Campus";
+    document.getElementById("modalItemPhone").textContent = item.phone || "N/A";
+    document.getElementById("modalItemDate").textContent = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Recently";
+    document.getElementById("modalItemDescription").textContent = item.description || "No description.";
     
-    document.getElementById("userName").value = currentUser || "";
-    document.getElementById("userAddress").value = currentAddress || "";
+    const badge = document.getElementById("modalItemStatus");
+    if (badge) {
+        badge.textContent = item.available ? "Available" : "Rented";
+        badge.className = `status-badge ${item.available ? "available" : "rented"}`;
+    }
+    document.getElementById("modalRentBtn").onclick = () => selectItem(item.name);
+    document.getElementById("detailsModal").style.display = "flex";
+};
 
-    bookingSection.scrollIntoView({ behavior: "smooth" });
-    document.getElementById("userName").focus();
-}
+window.closeDetailsModal = () => {
+    document.getElementById("detailsModal").style.display = "none";
+};
 
-// Book an item submission
-let bookingForm = document.getElementById("bookingForm");
-if (bookingForm) {
-    bookingForm.onsubmit = async function(event) {
-        event.preventDefault();
-        if (!currentUser) {
-            alert("You must login first to book an item!");
-            window.location.href = "login.html";
-            return;
-        }
+// Close modal if user clicks outside of card
+window.onclick = (e) => {
+    const modal = document.getElementById("detailsModal");
+    if (e.target === modal) modal.style.display = "none";
+};
 
-        let name = document.getElementById("userName").value.trim();
-        let address = document.getElementById("userAddress").value.trim();
-        let item = document.getElementById("itemName").value;
-        let days = parseInt(document.getElementById("rentalDays").value);
-
-        // Find price of the item
-        let price = 5;
-        let cards = document.getElementsByClassName("item-card");
-        for (let i = 0; i < cards.length; i++) {
-            let titleHeading = cards[i].getElementsByTagName("h3")[0];
-            if (titleHeading && titleHeading.textContent.trim() === item) {
-                let priceText = cards[i].getElementsByClassName("price")[0].textContent;
-                let match = priceText.match(/\d+/);
-                if (match) price = parseInt(match[0]);
-                break;
-            }
-        }
-
-        let total = price * days;
-
-        // Attempt MongoDB API booking save
-        try {
-            const response = await fetch(`${API_BASE}/bookings`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userName: name,
-                    userAddress: address,
-                    itemName: item,
-                    rentalDays: days,
-                    totalPrice: total
-                })
-            });
-            if (!response.ok) {
-                const errData = await response.json();
-                console.warn("MongoDB Booking Warning:", errData);
-            }
-        } catch (err) {
-            console.warn("Could not sync booking to MongoDB backend, using offline mode.", err);
-        }
-
-        // Fill receipt UI
-        document.getElementById("recName").textContent = name;
-        document.getElementById("recAddress").textContent = address;
-        document.getElementById("recItem").textContent = item;
-        document.getElementById("recDays").textContent = days;
-        document.getElementById("recTotal").textContent = total;
-
-        // Show receipt and hide form
-        bookingForm.parentElement.style.display = "none";
-        document.getElementById("receipt").style.display = "block";
-        alert("Booking Confirmed and saved to MongoDB!");
-    };
-}
-
-// Add new item submission
-let addItemForm = document.getElementById("addItemForm");
-if (addItemForm) {
-    addItemForm.onsubmit = async function(event) {
-        event.preventDefault();
-        let name = document.getElementById("newItemName").value.trim();
-        let price = document.getElementById("newItemPrice").value;
-        let category = document.getElementById("newItemCategory").value;
-
-        // Get image URL
-        let image = document.getElementById("newItemImage").value.trim();
-
-        // Attempt MongoDB API item creation
-        try {
-            const res = await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, price, category, image })
-            });
-
-            if (res.ok) {
-                alert(name + " listed successfully and saved to MongoDB!");
-                addItemForm.reset();
-                fetchItemsFromAPI();
-                return;
-            }
-        } catch (err) {
-            console.warn("MongoDB server unavailable, listing item locally.", err);
-        }
-
-        // Offline Fallback UI insertion
-        let img = image || "./images/laptop.png";
-        if (!image) {
-            if (category === "Tools") img = "./images/drill.png";
-            if (category === "Vehicles") img = "./images/bicycle.png";
-            if (category === "Electronics") img = "./images/camera.png";
-        }
-
-        let grid = document.querySelector(".items-grid");
-        let card = document.createElement("div");
-        card.className = "item-card";
-        card.setAttribute("data-category", category);
-        card.innerHTML = `
-            <img src="${img}" alt="${name}">
-            <div class="item-details">
-                <h3>${name}</h3>
-                <p class="price">$${price}/day</p>
-                <button class="rent-btn" onclick="selectItem('${name.replace(/'/g, "\\'")}')">Rent Now</button>
-            </div>
-        `;
-        grid.appendChild(card);
-
-        let itemSelect = document.getElementById("itemName");
-        if (itemSelect) {
-            let opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            itemSelect.appendChild(opt);
-        }
-
-        alert(name + " listed locally!");
-        addItemForm.reset();
-    };
-}
-
-// Login and Signup toggle logic (login.html)
-let isSignUp = false;
-let toggleAuthMode = document.getElementById("toggleAuthMode");
-let authForm = document.getElementById("authForm");
-
-if (toggleAuthMode && authForm) {
-    toggleAuthMode.onclick = function(event) {
-        event.preventDefault();
+// 2. AUTHENTICATION (login.html)
+const authForm = document.getElementById("authForm");
+if (authForm) {
+    let isSignUp = false;
+    const toggle = document.getElementById("toggleAuthMode");
+    toggle.onclick = (e) => {
+        e.preventDefault();
         isSignUp = !isSignUp;
-        
-        if (isSignUp) {
-            document.getElementById("authTitle").textContent = "Create Account";
-            document.getElementById("authSubtitle").textContent = "Create account to rent items";
-            document.getElementById("authSubmitBtn").textContent = "Sign Up";
-            toggleAuthMode.textContent = "Already have an account? Login";
-            
-            document.getElementById("nameGroup").style.display = "block";
-            document.getElementById("addressGroup").style.display = "block";
-            document.getElementById("fullName").required = true;
-            document.getElementById("address").required = true;
-        } else {
-            document.getElementById("authTitle").textContent = "Login";
-            document.getElementById("authSubtitle").textContent = "Sign in to rent campus items";
-            document.getElementById("authSubmitBtn").textContent = "Sign In";
-            toggleAuthMode.textContent = "Don't have an account? Sign Up";
-            
-            document.getElementById("nameGroup").style.display = "none";
-            document.getElementById("addressGroup").style.display = "none";
-            document.getElementById("fullName").required = false;
-            document.getElementById("address").required = false;
-        }
+        document.getElementById("authTitle").textContent = isSignUp ? "Create Account" : "Login";
+        document.getElementById("authSubtitle").textContent = isSignUp ? "Create account to rent items" : "Sign in to rent campus items";
+        document.getElementById("authSubmitBtn").textContent = isSignUp ? "Sign Up" : "Sign In";
+        toggle.textContent = isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up";
+        document.getElementById("nameGroup").style.display = isSignUp ? "block" : "none";
+        document.getElementById("addressGroup").style.display = isSignUp ? "block" : "none";
+        document.getElementById("fullName").required = isSignUp;
+        document.getElementById("address").required = isSignUp;
     };
 
-    authForm.onsubmit = async function(event) {
-        event.preventDefault();
-        let email = document.getElementById("email").value.trim();
-        let password = document.getElementById("password").value;
-
+    authForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const payload = { email, password };
         if (isSignUp) {
-            let name = document.getElementById("fullName").value.trim();
-            let address = document.getElementById("address").value.trim();
-
-            try {
-                const res = await fetch(`${API_BASE}/auth/signup`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, email, password, address })
-                });
-
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error || "Signup failed");
-                    return;
-                }
-
-                localStorage.setItem("currentUser", data.user.name);
-                localStorage.setItem("currentAddress", data.user.address);
-                alert("Account created and saved to MongoDB!");
-                window.location.href = "index.html";
-                return;
-            } catch (err) {
-                console.warn("MongoDB API offline, falling back to localStorage authentication.", err);
-            }
-
-            // Fallback localStorage auth
-            let users = JSON.parse(localStorage.getItem("users") || "{}");
-            if (users[email]) {
-                alert("An account with this email already exists!");
-                return;
-            }
-            users[email] = { name: name, address: address, password: password };
-            localStorage.setItem("users", JSON.stringify(users));
-            localStorage.setItem("currentUser", name);
-            localStorage.setItem("currentAddress", address);
-            alert("Account created successfully!");
+            payload.name = document.getElementById("fullName").value.trim();
+            payload.address = document.getElementById("address").value.trim();
+        }
+        const res = await fetch(isSignUp ? "/api/auth/signup" : "/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem("currentUser", data.user.name);
+            localStorage.setItem("currentAddress", data.user.address);
+            alert(isSignUp ? "Account created!" : `Welcome, ${data.user.name}!`);
             window.location.href = "index.html";
-
         } else {
-            // Login flow
-            try {
-                const res = await fetch(`${API_BASE}/auth/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password })
-                });
+            alert("Authentication failed!");
+        }
+    };
+}
 
-                const data = await res.json();
-                if (res.ok) {
-                    localStorage.setItem("currentUser", data.user.name);
-                    localStorage.setItem("currentAddress", data.user.address);
-                    alert("Welcome back, " + data.user.name + "!");
-                    window.location.href = "index.html";
-                    return;
-                } else {
-                    alert(data.error || "Invalid login credentials");
-                    return;
-                }
-            } catch (err) {
-                console.warn("MongoDB API offline, checking local storage.", err);
-            }
+// 3. LIST NEW ITEM (list-item.html)
+const addItemForm = document.getElementById("addItemForm");
+if (addItemForm) {
+    if (!currentUser) { alert("Please log in first!"); window.location.href = "login.html"; }
+    addItemForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const name = document.getElementById("newItemName").value.trim();
+        const price = document.getElementById("newItemPrice").value;
+        const category = document.getElementById("newItemCategory").value;
+        const description = document.getElementById("newItemDescription").value.trim();
+        const location = document.getElementById("newItemLocation").value.trim();
+        const phone = document.getElementById("newItemPhone").value.trim();
+        const fileInput = document.getElementById("newItemImage");
+        
+        let image = "";
+        if (fileInput?.files?.[0]) {
+            const file = fileInput.files[0];
+            image = await new Promise(r => {
+                const reader = new FileReader();
+                reader.onload = () => r(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
+        const res = await fetch("/api/items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, price, category, image, description, location, phone, owner: currentUser })
+        });
+        if (res.ok) {
+            alert(`${name} listed successfully!`);
+            window.location.href = "index.html#items";
+        } else {
+            alert("Failed to list item!");
+        }
+    };
+}
 
-            // Local fallback
-            let users = JSON.parse(localStorage.getItem("users") || "{}");
-            let userObj = users[email];
-            if (userObj && userObj.password === password) {
-                localStorage.setItem("currentUser", userObj.name);
-                localStorage.setItem("currentAddress", userObj.address);
-                alert("Welcome back, " + userObj.name + "!");
-                window.location.href = "index.html";
-            } else {
-                alert("Invalid email or password!");
-            }
+// 4. BOOK ITEM (book.html)
+const bookingForm = document.getElementById("bookingForm");
+if (bookingForm) {
+    if (currentUser) document.getElementById("userName").value = currentUser;
+    if (currentAddress) document.getElementById("userAddress").value = currentAddress;
+    
+    let itemsList = [];
+    const select = document.getElementById("itemName");
+    
+    (async () => {
+        const res = await fetch("/api/items");
+        itemsList = res.ok ? await res.json() : [];
+        select.innerHTML = '<option value="" disabled selected>Select an item</option>';
+        itemsList.forEach(item => select.add(new Option(`${item.name} ($${item.price}/day)`, item.name)));
+        
+        const preselectedItem = new URLSearchParams(window.location.search).get("item");
+        if (preselectedItem) { select.value = preselectedItem; updateCost(); }
+    })();
+
+    const updateCost = () => {
+        const item = itemsList.find(i => i.name === select.value);
+        const days = parseInt(document.getElementById("rentalDays").value) || 0;
+        const calc = document.getElementById("costCalculator");
+        if (item && days > 0) {
+            document.getElementById("estimatedCost").textContent = item.price * days;
+            calc.style.display = "block";
+        } else {
+            calc.style.display = "none";
+        }
+    };
+    select.onchange = updateCost;
+    document.getElementById("rentalDays").oninput = updateCost;
+
+    bookingForm.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!currentUser) return alert("Log in first!");
+        const name = document.getElementById("userName").value.trim();
+        const address = document.getElementById("userAddress").value.trim();
+        const phone = document.getElementById("userPhone").value.trim();
+        const itemName = select.value;
+        const days = parseInt(document.getElementById("rentalDays").value);
+        const item = itemsList.find(i => i.name === itemName);
+        const total = (item ? item.price : 5) * days;
+
+        const res = await fetch("/api/bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userName: name, userAddress: address, userPhone: phone, itemName, rentalDays: days, totalPrice: total })
+        });
+        if (res.ok) {
+            document.getElementById("bookingFormContainer").style.display = "none";
+            document.getElementById("receipt").style.display = "block";
+            document.getElementById("recName").textContent = name;
+            document.getElementById("recAddress").textContent = address;
+            document.getElementById("recPhone").textContent = phone;
+            document.getElementById("recItem").textContent = itemName;
+            document.getElementById("recDays").textContent = days;
+            document.getElementById("recTotal").textContent = total;
+            alert("Booking Confirmed!");
+        } else {
+            alert("Failed!");
         }
     };
 }
