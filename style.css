@@ -53,7 +53,7 @@ body { color: #2d3748; background: #f7fafc; line-height: 1.6; }
     text-align: center;
 }
 .items-section { background: #fff; }
-.list-section { background: #f7fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+.list-section { display: none; background: #f7fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
 .booking-section { background: #fff; border-bottom: 1px solid #e2e8f0; display: none; }
 .contact-section { background: #2d3748; color: #e2e8f0; }
 

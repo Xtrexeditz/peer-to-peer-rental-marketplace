@@ -21,7 +21,7 @@
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#items">Items</a></li>
-                <li><a href="#list-item">List Item</a></li>
+                <li><a href="#list-item" id="listItemLink">List Item</a></li>
                 <li><a href="login.html" id="authLink">Login</a></li>
             </ul>
         </nav>
@@ -108,6 +108,10 @@
                         <option value="Vehicles">Vehicles</option>
                         <option value="Other">Other</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="newItemImage">Item Photo URL</label>
+                    <input type="text" id="newItemImage" placeholder="e.g. ./images/camera.png or web URL">
                 </div>
                 <button type="submit" class="submit-btn" style="background:#3b82f6;">List Item</button>
             </form>
