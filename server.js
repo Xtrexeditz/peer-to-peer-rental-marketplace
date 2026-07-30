@@ -10,15 +10,6 @@ const mongoose = require("mongoose");
 mongoose.connection.once("open", async () => {
   // Update existing default items (lenders) in database from legacy defaults to user's name
   await Item.updateMany({ owner: "Campus Renter" }, { owner: "Ram Mandloi" });
-
-  if (await Item.countDocuments() === 0) {
-    await Item.insertMany([
-      { name: "High-Performance Laptop", price: 25, category: "Electronics", image: "./images/laptop.png", description: "Powerful Core i7 laptop with 16GB RAM and 512GB SSD. Perfect for coding, project presentation, and campus assignments.", location: "Block C, Room 102", phone: "7894195751", owner: "Ram Mandloi" },
-      { name: "DSLR Canon Camera", price: 18, category: "Electronics", image: "./images/camera.png", description: "Canon DSLR with 18-55mm lens, battery, and 64GB memory card. Ideal for photography projects, campus festivals, and vlog shoots.", location: "Hostel 3, Room 304", phone: "9876543210", owner: "Rahul Sharma" },
-      { name: "Power Drill Machine", price: 8, category: "Tools", image: "./images/drill.png", description: "Multi-functional impact power drill machine with a complete bit-set. Perfect for student room assembly and DIY campus engineering tasks.", location: "Block D, Room 205", phone: "8765432109", owner: "Aman Gupta" },
-      { name: "Mountain Bicycle", price: 5, category: "Vehicles", image: "./images/bicycle.png", description: "18-speed hybrid gear mountain bicycle in excellent condition. Comes with safety helmet and lock. Great for quick campus commutes.", location: "Block C Cycle Stand", phone: "7654321098", owner: "Rohan Verma" }
-    ]);
-  }
 });
 
 app.get("/api/health", (req, res) => res.json({ status: "OK", dbState: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected" }));

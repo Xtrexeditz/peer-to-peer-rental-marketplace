@@ -1,3 +1,14 @@
+const isLocal = window.location.hostname === "localhost" || 
+                window.location.hostname === "127.0.0.1" || 
+                window.location.hostname.startsWith("192.168.") || 
+                window.location.hostname.startsWith("10.") || 
+                window.location.hostname.startsWith("172.") ||
+                window.location.protocol === "file:";
+
+const API_BASE = isLocal
+    ? (window.location.port === "5000" ? "" : (window.location.protocol === "file:" ? "http://localhost:5000" : `http://${window.location.hostname}:5000`))
+    : "";
+
 const currentUser = localStorage.getItem("currentUser");
 const currentAddress = localStorage.getItem("currentAddress");
 
@@ -16,23 +27,29 @@ let allItemsList = [];
 const grid = document.querySelector(".items-grid");
 if (grid) {
     (async () => {
-        const res = await fetch("/api/items");
-        allItemsList = res.ok ? await res.json() : [];
-        grid.innerHTML = allItemsList.map(item => {
-            const img = item.image || (item.category === "Tools" ? "./images/drill.png" : item.category === "Vehicles" ? "./images/bicycle.png" : item.category === "Electronics" ? "./images/camera.png" : "./images/laptop.png");
-            return `
-            <div class="item-card" data-category="${item.category}">
-                <img src="${img}" alt="${item.name}">
-                <div class="item-details">
-                    <h3>${item.name}</h3>
-                    <p class="price">$${item.price}/day</p>
-                    <div class="item-actions-group">
-                        <button class="details-btn" onclick="openDetailsModal('${item._id}')">Details</button>
-                        <button class="rent-btn" onclick="selectItem('${item.name.replace(/'/g, "\\'")}')">Rent Now</button>
+        try {
+            const res = await fetch(`${API_BASE}/api/items`);
+            allItemsList = res.ok ? await res.json() : [];
+            grid.innerHTML = allItemsList.map(item => {
+                const img = item.image || (item.category === "Tools" ? "./images/drill.png" : item.category === "Vehicles" ? "./images/bicycle.png" : item.category === "Electronics" ? "./images/camera.png" : "./images/laptop.png");
+                const safeName = item.name.replace(/"/g, '&quot;');
+                return `
+                <div class="item-card" data-category="${item.category}">
+                    <img src="${img}" alt="${item.name}">
+                    <div class="item-details">
+                        <h3>${item.name}</h3>
+                        <p class="price">$${item.price}/day</p>
+                        <div class="item-actions-group">
+                            <button class="details-btn" onclick="openDetailsModal('${item._id}')">Details</button>
+                            <button class="rent-btn" data-item-name="${safeName}" onclick="selectItem(this.dataset.itemName)">Rent Now</button>
+                        </div>
                     </div>
-                </div>
-            </div>`;
-        }).join("") || `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No items available.</p>`;
+                </div>`;
+            }).join("") || `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No items available.</p>`;
+        } catch (error) {
+            console.error("Fetch items error:", error);
+            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: red;">Error connecting to server. Please ensure the backend is running.</p>`;
+        }
     })();
 }
 
@@ -108,19 +125,29 @@ if (authForm) {
             payload.name = document.getElementById("fullName").value.trim();
             payload.address = document.getElementById("address").value.trim();
         }
-        const res = await fetch(isSignUp ? "/api/auth/signup" : "/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-            const data = await res.json();
-            localStorage.setItem("currentUser", data.user.name);
-            localStorage.setItem("currentAddress", data.user.address);
-            alert(isSignUp ? "Account created!" : `Welcome, ${data.user.name}!`);
-            window.location.href = "index.html";
-        } else {
-            alert("Authentication failed!");
+        try {
+            const res = await fetch(`${API_BASE}${isSignUp ? "/api/auth/signup" : "/api/auth/login"}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem("currentUser", data.user.name);
+                localStorage.setItem("currentAddress", data.user.address);
+                alert(isSignUp ? "Account created!" : `Welcome, ${data.user.name}!`);
+                window.location.href = "index.html";
+            } else {
+                let errorMsg = "Authentication failed!";
+                try {
+                    const data = await res.json();
+                    if (data && data.error) errorMsg = data.error;
+                } catch (jsonErr) {}
+                alert(errorMsg);
+            }
+        } catch (error) {
+            console.error("Authentication error:", error);
+            alert("Network error: Could not connect to the backend server. Please make sure the server is running on port 5000.");
         }
     };
 }
@@ -148,16 +175,26 @@ if (addItemForm) {
                 reader.readAsDataURL(file);
             });
         }
-        const res = await fetch("/api/items", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, price, category, image, description, location, phone, owner: currentUser })
-        });
-        if (res.ok) {
-            alert(`${name} listed successfully!`);
-            window.location.href = "index.html#items";
-        } else {
-            alert("Failed to list item!");
+        try {
+            const res = await fetch(`${API_BASE}/api/items`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, price, category, image, description, location, phone, owner: currentUser })
+            });
+            if (res.ok) {
+                alert(`${name} listed successfully!`);
+                window.location.href = "index.html#items";
+            } else {
+                let errorMsg = "Failed to list item!";
+                try {
+                    const data = await res.json();
+                    if (data && data.error) errorMsg = data.error;
+                } catch (jsonErr) {}
+                alert(errorMsg);
+            }
+        } catch (error) {
+            console.error("List item error:", error);
+            alert("Network error: Could not connect to the backend server. Please make sure the server is running on port 5000.");
         }
     };
 }
@@ -172,13 +209,18 @@ if (bookingForm) {
     const select = document.getElementById("itemName");
     
     (async () => {
-        const res = await fetch("/api/items");
-        itemsList = res.ok ? await res.json() : [];
-        select.innerHTML = '<option value="" disabled selected>Select an item</option>';
-        itemsList.forEach(item => select.add(new Option(`${item.name} ($${item.price}/day)`, item.name)));
-        
-        const preselectedItem = new URLSearchParams(window.location.search).get("item");
-        if (preselectedItem) { select.value = preselectedItem; updateCost(); }
+        try {
+            const res = await fetch(`${API_BASE}/api/items`);
+            itemsList = res.ok ? await res.json() : [];
+            select.innerHTML = '<option value="" disabled selected>Select an item</option>';
+            itemsList.forEach(item => select.add(new Option(`${item.name} ($${item.price}/day)`, item.name)));
+            
+            const preselectedItem = new URLSearchParams(window.location.search).get("item");
+            if (preselectedItem) { select.value = preselectedItem; updateCost(); }
+        } catch (error) {
+            console.error("Load items for booking error:", error);
+            select.innerHTML = '<option value="" disabled selected>Error loading items from server</option>';
+        }
     })();
 
     const updateCost = () => {
@@ -206,23 +248,33 @@ if (bookingForm) {
         const item = itemsList.find(i => i.name === itemName);
         const total = (item ? item.price : 5) * days;
 
-        const res = await fetch("/api/bookings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userName: name, userAddress: address, userPhone: phone, itemName, rentalDays: days, totalPrice: total })
-        });
-        if (res.ok) {
-            document.getElementById("bookingFormContainer").style.display = "none";
-            document.getElementById("receipt").style.display = "block";
-            document.getElementById("recName").textContent = name;
-            document.getElementById("recAddress").textContent = address;
-            document.getElementById("recPhone").textContent = phone;
-            document.getElementById("recItem").textContent = itemName;
-            document.getElementById("recDays").textContent = days;
-            document.getElementById("recTotal").textContent = total;
-            alert("Booking Confirmed!");
-        } else {
-            alert("Failed!");
+        try {
+            const res = await fetch(`${API_BASE}/api/bookings`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userName: name, userAddress: address, userPhone: phone, itemName, rentalDays: days, totalPrice: total })
+            });
+            if (res.ok) {
+                document.getElementById("bookingFormContainer").style.display = "none";
+                document.getElementById("receipt").style.display = "block";
+                document.getElementById("recName").textContent = name;
+                document.getElementById("recAddress").textContent = address;
+                document.getElementById("recPhone").textContent = phone;
+                document.getElementById("recItem").textContent = itemName;
+                document.getElementById("recDays").textContent = days;
+                document.getElementById("recTotal").textContent = total;
+                alert("Booking Confirmed!");
+            } else {
+                let errorMsg = "Booking failed!";
+                try {
+                    const data = await res.json();
+                    if (data && data.error) errorMsg = data.error;
+                } catch (jsonErr) {}
+                alert(errorMsg);
+            }
+        } catch (error) {
+            console.error("Booking error:", error);
+            alert("Network error: Could not connect to the backend server. Please make sure the server is running on port 5000.");
         }
     };
 }
