@@ -53,13 +53,34 @@ app.post("/api/bookings", async (req, res) => {
   try {
     const { userName, userAddress, userPhone, itemName, rentalDays, totalPrice } = req.body;
     if (!userName || !userAddress || !userPhone || !itemName || !rentalDays || !totalPrice) return res.status(400).json({ error: "Missing fields" });
-    const booking = await Booking.create({ userName, userAddress, userPhone, itemName, rentalDays: Number(rentalDays), totalPrice: Number(totalPrice) });
+    const item = await Item.findOne({ name: itemName });
+    const ownerName = item ? item.owner : "Ram Mandloi";
+    const booking = await Booking.create({ userName, userAddress, userPhone, itemName, rentalDays: Number(rentalDays), totalPrice: Number(totalPrice), ownerName });
     res.status(201).json({ message: "Success", booking });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get("/api/bookings", async (req, res) => {
-  try { res.json(await Booking.find().sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
+  try {
+    let q = {};
+    if (req.query.userName) {
+      q.userName = req.query.userName;
+    } else if (req.query.ownerName) {
+      q.ownerName = req.query.ownerName;
+    }
+    res.json(await Booking.find(q).sort({ createdAt: -1 }));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch("/api/bookings/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    if (status === "Confirmed") await Item.findOneAndUpdate({ name: booking.itemName }, { available: false });
+    if (status === "Cancelled") await Item.findOneAndUpdate({ name: booking.itemName }, { available: true });
+    res.json({ message: "Success", booking });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 if (require.main === module) {

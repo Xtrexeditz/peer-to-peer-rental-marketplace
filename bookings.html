@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentEasy - Booking History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <a href="index.html" style="text-decoration: none;"><h1>RentEasy</h1></a>
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#items">Items</a></li>
+                <li><a href="list-item.html" id="listItemLink">List Item</a></li>
+                <li><a href="login.html" id="authLink">Login / Signup</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="bookings-section">
+        <h2 class="section-title">Your Booking History</h2>
+        
+        <!-- Profile Details Card -->
+        <div class="profile-details-card">
+            <div class="profile-avatar-large" id="profileAvatarLarge">U</div>
+            <div class="profile-info-large">
+                <h2 id="profileNameLarge">User Profile</h2>
+                <div class="profile-meta-row">
+                    <svg class="profile-meta-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="profileEmailLarge">Loading...</span>
+                </div>
+                <div class="profile-meta-row">
+                    <svg class="profile-meta-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2">
+                        <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="profileAddressLarge">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Tabs -->
+        <div class="bookings-tabs">
+            <button class="tab-btn active" id="tabRentals" onclick="switchTab('rentals')">Rentals You Made</button>
+            <button class="tab-btn" id="tabReceived" onclick="switchTab('received')">Bookings Received</button>
+        </div>
+
+        <!-- Stats Container -->
+        <div class="bookings-stats">
+            <div class="stat-card">
+                <h3>Total Bookings</h3>
+                <p id="statTotalBookings">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Active Rentals</h3>
+                <p id="statActiveRentals">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Spent</h3>
+                <p id="statTotalSpent">$0</p>
+            </div>
+        </div>
+
+        <!-- Bookings List -->
+        <div id="bookingsList" class="bookings-list">
+            <div style="text-align: center; color: var(--text-muted);">Loading bookings...</div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 RentEasy. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

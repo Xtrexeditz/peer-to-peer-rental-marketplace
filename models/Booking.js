@@ -21,6 +21,11 @@ const bookingSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  ownerName: {
+    type: String,
+    required: true,
+    trim: true
+  },
   rentalDays: {
     type: Number,
     required: true,
@@ -33,7 +38,7 @@ const bookingSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["Confirmed", "Pending", "Cancelled"],
-    default: "Confirmed"
+    default: "Pending"
   },
   createdAt: {
     type: Date,

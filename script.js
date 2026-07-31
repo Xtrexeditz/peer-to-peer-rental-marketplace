@@ -15,10 +15,38 @@ const currentAddress = localStorage.getItem("currentAddress");
 // Common Navbar Setup
 const authLink = document.getElementById("authLink");
 if (authLink) {
-    authLink.textContent = currentUser ? `Logout (${currentUser})` : "Login / Signup";
-    authLink.href = currentUser ? "#" : "login.html";
     if (currentUser) {
-        authLink.onclick = () => { localStorage.clear(); location.reload(); };
+        const parentLi = authLink.parentElement;
+        parentLi.className = "profile-container";
+        const initials = currentUser.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+        parentLi.innerHTML = `
+            <button class="profile-icon-btn" id="profileIconBtn" title="${currentUser}">${initials}</button>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="dropdown-header">
+                    <span class="dropdown-name">${currentUser}</span>
+                    <span class="dropdown-address">${currentAddress || 'No Address'}</span>
+                </div>
+                <hr class="dropdown-divider">
+                <a href="bookings.html" class="dropdown-item">Booking History</a>
+                <a href="#" class="dropdown-item" id="logoutBtn">Logout</a>
+            </div>
+        `;
+        const dropdown = document.getElementById("profileDropdown");
+        document.getElementById("profileIconBtn").onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle("show");
+        };
+        document.getElementById("logoutBtn").onclick = (e) => {
+            e.preventDefault();
+            localStorage.clear();
+            window.location.href = "index.html";
+        };
+        window.addEventListener("click", (e) => {
+            if (!parentLi.contains(e.target)) dropdown.classList.remove("show");
+        });
+    } else {
+        authLink.textContent = "Login / Signup";
+        authLink.href = "login.html";
     }
 }
 
@@ -135,6 +163,7 @@ if (authForm) {
                 const data = await res.json();
                 localStorage.setItem("currentUser", data.user.name);
                 localStorage.setItem("currentAddress", data.user.address);
+                localStorage.setItem("currentEmail", data.user.email);
                 alert(isSignUp ? "Account created!" : `Welcome, ${data.user.name}!`);
                 window.location.href = "index.html";
             } else {
@@ -213,7 +242,12 @@ if (bookingForm) {
             const res = await fetch(`${API_BASE}/api/items`);
             itemsList = res.ok ? await res.json() : [];
             select.innerHTML = '<option value="" disabled selected>Select an item</option>';
-            itemsList.forEach(item => select.add(new Option(`${item.name} ($${item.price}/day)`, item.name)));
+            itemsList.forEach(item => {
+                const optText = `${item.name} ($${item.price}/day)${!item.available ? ' - Rented' : ''}`;
+                const option = new Option(optText, item.name);
+                if (!item.available) option.disabled = true;
+                select.add(option);
+            });
             
             const preselectedItem = new URLSearchParams(window.location.search).get("item");
             if (preselectedItem) { select.value = preselectedItem; updateCost(); }
@@ -277,4 +311,142 @@ if (bookingForm) {
             alert("Network error: Could not connect to the backend server. Please make sure the server is running on port 5000.");
         }
     };
+}
+
+// 5. BOOKINGS HISTORY (bookings.html)
+const bookingsContainer = document.getElementById("bookingsList");
+if (bookingsContainer) {
+    if (!currentUser) {
+        alert("Please log in first!");
+        window.location.href = "login.html";
+    } else {
+        const el = id => document.getElementById(id);
+        if (el("profileNameLarge")) {
+            el("profileAvatarLarge").textContent = currentUser.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+            el("profileNameLarge").textContent = currentUser;
+            el("profileEmailLarge").textContent = localStorage.getItem("currentEmail") || `${currentUser.replace(/\s+/g, "").toLowerCase()}@college.edu`;
+            el("profileAddressLarge").textContent = currentAddress || 'No Address Listed';
+        }
+
+        let activeTab = "rentals";
+
+        window.switchTab = (tab) => {
+            activeTab = tab;
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            if (tab === "rentals") {
+                el("tabRentals").classList.add("active");
+            } else {
+                el("tabReceived").classList.add("active");
+            }
+            loadBookings();
+        };
+
+        const loadBookings = async () => {
+            try {
+                // Update titles based on active tab
+                const statCards = document.querySelectorAll(".bookings-stats .stat-card");
+                const statTotalTitle = statCards[0].querySelector("h3");
+                const statActiveTitle = statCards[1].querySelector("h3");
+                const statMoneyTitle = statCards[2].querySelector("h3");
+
+                let url = "";
+                if (activeTab === "rentals") {
+                    url = `${API_BASE}/api/bookings?userName=${encodeURIComponent(currentUser)}`;
+                    statTotalTitle.textContent = "Total Bookings";
+                    statActiveTitle.textContent = "Active Rentals";
+                    statMoneyTitle.textContent = "Total Spent";
+                } else {
+                    url = `${API_BASE}/api/bookings?ownerName=${encodeURIComponent(currentUser)}`;
+                    statTotalTitle.textContent = "Bookings Received";
+                    statActiveTitle.textContent = "Approved Rentals";
+                    statMoneyTitle.textContent = "Estimated Earnings";
+                }
+
+                const res = await fetch(url);
+                const bookings = res.ok ? await res.json() : [];
+                const confirmed = bookings.filter(b => b.status === "Confirmed");
+                
+                el("statTotalBookings").textContent = bookings.length;
+                el("statActiveRentals").textContent = confirmed.length;
+                el("statTotalSpent").textContent = `$${confirmed.reduce((sum, b) => sum + b.totalPrice, 0)}`;
+                
+                bookingsContainer.innerHTML = bookings.map(b => {
+                    const statusClass = (b.status || 'Pending').toLowerCase();
+                    const statusText = b.status || 'Pending';
+                    const showCancelForRenter = activeTab === "rentals" && (b.status === "Confirmed" || b.status === "Pending");
+                    const showActionsForOwner = activeTab === "received" && b.status === "Pending";
+                    const showCancelForOwner = activeTab === "received" && b.status === "Confirmed";
+                    
+                    return `
+                    <div class="booking-card">
+                        <div class="booking-card-header">
+                            <div>
+                                <h3>${b.itemName}</h3>
+                                <p class="booking-date">
+                                    ${activeTab === "rentals" ? 'Owned by: ' + (b.ownerName || 'Lender') : 'Rented by: ' + b.userName} | 
+                                    Booked on ${b.createdAt ? new Date(b.createdAt).toLocaleDateString() : "Recently"}
+                                </p>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="booking-card-details">
+                            <div class="detail-row"><span>Duration</span><strong>${b.rentalDays} Days</strong></div>
+                            <div class="detail-row"><span>${activeTab === "rentals" ? "Total Paid" : "Earnings"}</span><strong class="booking-total">$${b.totalPrice}</strong></div>
+                            <div class="detail-row"><span>${activeTab === "rentals" ? "Lender Contact" : "Renter Contact"}</span><strong>${b.userPhone}</strong></div>
+                            <div class="detail-row"><span>Delivery Address</span><strong>${b.userAddress}</strong></div>
+                        </div>
+                        
+                        ${showCancelForRenter ? `<button class="cancel-booking-btn" onclick="updateBookingStatus('${b._id}', 'Cancelled')">Cancel Booking</button>` : ''}
+                        
+                        ${showActionsForOwner ? `
+                        <div class="booking-card-actions">
+                            <button class="accept-booking-btn" onclick="updateBookingStatus('${b._id}', 'Confirmed')">Accept Booking</button>
+                            <button class="decline-booking-btn" onclick="updateBookingStatus('${b._id}', 'Cancelled')">Decline Booking</button>
+                        </div>
+                        ` : ''}
+
+                        ${showCancelForOwner ? `
+                        <div class="booking-card-actions">
+                            <button class="decline-booking-btn" onclick="updateBookingStatus('${b._id}', 'Cancelled')">Decline Booking</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                }).join("") || `
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <h3>No Bookings Found</h3>
+                        <p>${activeTab === "rentals" ? "You haven't rented any items yet." : "No one has booked your items yet."}</p>
+                        ${activeTab === "rentals" ? `<a href="index.html#items" class="cta-btn" style="margin-top: 15px; display: inline-block;">Browse Items</a>` : ''}
+                    </div>
+                `;
+            } catch (e) {
+                console.error(e);
+                bookingsContainer.innerHTML = `<p style="text-align: center; color: red;">Error connecting to server.</p>`;
+            }
+        };
+
+        window.updateBookingStatus = async (id, status) => {
+            const confirmMsg = status === "Confirmed" ? "Are you sure you want to accept this booking?" : "Are you sure you want to cancel/decline this booking?";
+            if (confirm(confirmMsg)) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/bookings/${id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status })
+                    });
+                    if (res.ok) { 
+                        alert(status === "Confirmed" ? "Booking accepted!" : "Booking cancelled/declined!"); 
+                        loadBookings(); 
+                    } else {
+                        alert("Failed to update booking.");
+                    }
+                } catch (err) { 
+                    alert("Network error."); 
+                }
+            }
+        };
+
+        loadBookings();
+    }
 }
